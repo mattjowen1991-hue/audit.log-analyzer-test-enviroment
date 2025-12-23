@@ -229,7 +229,7 @@
         <div class="section-title">Interval Breakdown</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>#</th><th>Start</th><th>Stop</th><th>Duration</th><th>Stop Reason</th></tr></thead>
+            <thead><tr><th>#</th><th>Start</th><th>Stop</th><th>Duration</th><th>Project</th><th>Stop Reason</th></tr></thead>
             <tbody id="intervalsBody"></tbody>
           </table>
         </div>
@@ -616,15 +616,18 @@
       }
       else if (line.toLowerCase().includes('sentry event')) { type = 'SENTRY'; plain = 'Crash reported to Sentry.'; }
 
-      if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
-        const rm = line.match(/by \[([^\]]+)\]/);
-        reason = rm ? rm[1] : 'USER';
-      }
+      let projectId = null;
+if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
+  const rm = line.match(/by \[([^\]]+)\]/);
+  reason = rm ? rm[1] : 'USER';
+  const pm = line.match(/\[Project:(\d+)\]/);
+  if (pm) projectId = pm[1];
+}
 
       const fm = line.match(/(?:for|after)\s+(\d+)\s+seconds/i);
       if (fm) secs = parseInt(fm[1]);
 
-      return { ts, type, reason, plain, secs, keepIdle, stopTrack, resumeStart, raw: line };
+      return { ts, type, reason, plain, secs, keepIdle, stopTrack, resumeStart, projectId, raw: line };
     }
 
     function analyze(text) {
@@ -653,7 +656,7 @@
           if (!open) {
             warns.push({ type: 'UNMATCHED', msg: 'Unmatched STOP at ' + fmtTimeWithTz(e.ts), time: e.ts });
           } else {
-            intervals.push({ start: open.ts, stop: e.ts, secs: (e.ts - open.ts)/1000, startReason: open.reason || 'USER', stopReason: e.reason || (e.type === 'SHUTDOWN' ? 'SHUTDOWN' : 'USER') });
+            intervals.push({ start: open.ts, stop: e.ts, secs: (e.ts - open.ts)/1000, startReason: open.reason || 'USER', stopReason: e.reason || (e.type === 'SHUTDOWN' ? 'SHUTDOWN' : 'USER'), projectId: open.projectId || e.projectId || null });
             open = null;
           }
         }
@@ -771,7 +774,7 @@ if (it.stopReason === 'PROJECT_CONFIGURATION_URL') {
         const isRecovered = it.startReason === 'RESUMED';
         const rowStyle = isRecovered ? 'background: rgba(129,140,248,0.1);' : '';
         const recoveredBadge = isRecovered ? ' <span class="tag resume">RECOVERED</span>' : '';
-        return `<tr id="row-${i}" style="${rowStyle}"><td>${i+1}${recoveredBadge}</td><td><span class="time-link" data-ts="${it.start.toISOString()}">${fmtTimeWithTz(it.start, true)}</span></td><td><span class="time-link" data-ts="${it.stop.toISOString()}">${fmtTimeWithTz(it.stop, true)}</span></td><td><span class="tag ok">${fmtTime(it.secs)}</span></td><td><span class="tag ${stopCls}">${it.stopReason}</span></td></tr>`;
+        return `<tr id="row-${i}" style="${rowStyle}"><td>${i+1}${recoveredBadge}</td><td><span class="time-link" data-ts="${it.start.toISOString()}">${fmtTimeWithTz(it.start, true)}</span></td><td><span class="time-link" data-ts="${it.stop.toISOString()}">${fmtTimeWithTz(it.stop, true)}</span></td><td><span class="tag ok">${fmtTime(it.secs)}</span></td><td>${it.projectId || '—'}</td><td><span class="tag ${stopCls}">${it.stopReason}</span></td></tr>`;
       }).join('');
 
       $('intervalsBody').querySelectorAll('.time-link').forEach(el => {
@@ -901,9 +904,10 @@ else msg = w.msg;
 
             let content = `<p><span class="label">Start:</span> ${fmtTimeWithTz(it.start, true)}</p>`;
 content += `<p><span class="label">Stop:</span> ${fmtTimeWithTz(it.stop, true)}</p>`;
-            content += `<p><span class="label">Duration:</span> ${fmtTime(it.secs)}</p>`;
-            content += `<p><span class="label">Started by:</span> ${it.startReason}</p>`;
-            content += `<p><span class="label">Stopped by:</span> ${it.stopReason}</p>`;
+content += `<p><span class="label">Duration:</span> ${fmtTime(it.secs)}</p>`;
+if (it.projectId) content += `<p><span class="label">Project ID:</span> ${it.projectId}</p>`;
+content += `<p><span class="label">Started by:</span> ${it.startReason}</p>`;
+content += `<p><span class="label">Stopped by:</span> ${it.stopReason}</p>`;
             if (el.dataset.touching === 'true') {
               content += `<span class="touch-link" id="touchLink">Why are these bars touching?</span>`;
             }
