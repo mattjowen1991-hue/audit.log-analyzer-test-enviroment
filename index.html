@@ -693,6 +693,9 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
         if (it.stopReason === 'PROJECT_CONFIGURATION_URL') {
           warns.push({ type: 'STOPPED_BY_URL_PERMISSION', msg: `Tracking stopped - URL permission not granted at ${fmtTimeWithTz(it.stop)}`, time: it.stop, intervalIdx: i });
         }
+        if (it.stopReason === 'ERROR') {
+          warns.push({ type: 'STOPPED_BY_ERROR', msg: `Tracking stopped unexpectedly by error at ${fmtTimeWithTz(it.stop)}`, time: it.stop, intervalIdx: i });
+        }
       }
 
       const crashes = events.filter(e => e.type === 'STARTUP_UNCLEAN');
@@ -839,12 +842,12 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
       if (data.warns.length) {
         $('warningsList').innerHTML = data.warns.map((w, wIdx) => {
           let msg, borderCls = '';
-          const hasLearnMore = ['QUICK_STARTSTOP', 'CRASH_RECOVERED', 'CRASH_TIME_LOST', 'CRASH_NO_TRACKING', 'UNCLOSED', 'UNMATCHED', 'STOPPED_BY_CONFIG', 'STOPPED_BY_URL_PERMISSION'].includes(w.type);
+          const hasLearnMore = ['QUICK_STARTSTOP', 'CRASH_RECOVERED', 'CRASH_TIME_LOST', 'CRASH_NO_TRACKING', 'UNCLOSED', 'UNMATCHED', 'STOPPED_BY_CONFIG', 'STOPPED_BY_URL_PERMISSION', 'STOPPED_BY_ERROR'].includes(w.type);
           const learnMoreBtn = hasLearnMore ? `<button class="learn-more-btn" data-type="${w.type}">Learn more</button>` : '';
           
           // Determine border color based on warning type
           if (w.type === 'CRASH_RECOVERED') borderCls = 'success-border';
-          else if (w.type === 'CRASH_TIME_LOST' || w.type === 'STOPPED_BY_CONFIG' || w.type === 'STOPPED_BY_URL_PERMISSION' || w.type === 'UNCLOSED') borderCls = 'danger-border';
+          else if (w.type === 'CRASH_TIME_LOST' || w.type === 'STOPPED_BY_CONFIG' || w.type === 'STOPPED_BY_URL_PERMISSION' || w.type === 'UNCLOSED' || w.type === 'STOPPED_BY_ERROR') borderCls = 'danger-border';
           else if (w.type === 'CRASH_NO_TRACKING' || w.type === 'UNMATCHED') borderCls = 'info-border';
           
           // Format timestamp badge
@@ -865,6 +868,7 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
             else if (w.type === 'CRASH_NO_TRACKING') msg = `ℹ️ App crashed but user wasn't tracking, so no time was lost.`;
             else if (w.type === 'STOPPED_BY_URL_PERMISSION') msg = `🔗 Tracking stopped because URL permission wasn't granted. The project requires URL tracking.`;
             else if (w.type === 'STOPPED_BY_CONFIG') msg = `⚙️ Tracking was stopped by a configuration setting or limit.`;
+            else if (w.type === 'STOPPED_BY_ERROR') msg = `🚨 Tracking stopped due to an unexpected error. Check hubstaff.log for details.`;
             else msg = w.msg;
           } else { msg = w.msg; }
           
@@ -1418,6 +1422,54 @@ $('analyzeBtn').onclick = () => {
             <li>Restart Hubstaff and try again</li>
           </ol>
           <p>If you don't want to grant URL permission, you'll need to ask your admin if there's a project that doesn't require URL tracking.</p>
+        `
+      },
+
+      'STOPPED_BY_ERROR': {
+        title: '🚨 Tracking Stopped by Error',
+        content: `
+          <h3>What happened?</h3>
+          <p>The tracking timer stopped unexpectedly due to an internal error. The audit.log only records that an error occurred, but <strong>not the specific error details</strong>.</p>
+          
+          <h3>Where to find the actual error</h3>
+          <p>The <strong>hubstaff.log</strong> file contains the detailed error information. You'll need to:</p>
+          <ol>
+            <li>Get the <code>hubstaff.log</code> file from the user (same location as audit.log)</li>
+            <li>Open it in the <strong>Hubstaff Client Log Analyzer</strong> (purple theme)</li>
+            <li>Search for the timestamp shown in this warning</li>
+            <li>Look for [ERROR] entries around that time</li>
+          </ol>
+          
+          <h3>What to search for in hubstaff.log</h3>
+          <p>Use these searches in the Client Log Analyzer:</p>
+          <ul>
+            <li><code>error</code> - Find all error messages</li>
+            <li><code>ActivityTracker</code> - Find tracking-specific issues</li>
+            <li><code>exception</code> - Find crash details</li>
+            <li><code>watchdog</code> - Find app freeze events</li>
+            <li><code>STOP_ERROR</code> - Find the specific stop event</li>
+          </ul>
+          
+          <h3>Common causes of STOP_ERROR</h3>
+          <ul>
+            <li><strong>Memory issues</strong> - App ran out of memory</li>
+            <li><strong>Disk full</strong> - No space to write tracking data</li>
+            <li><strong>Database corruption</strong> - Local database file is damaged</li>
+            <li><strong>Permission denied</strong> - OS blocked access to a resource</li>
+            <li><strong>App bug</strong> - An unhandled exception in the tracking code</li>
+          </ul>
+          
+          <h3>What to tell the customer</h3>
+          <p>The logs show tracking stopped due to an unexpected error at [TIME]. I'll need to check the detailed logs (hubstaff.log) to identify the specific cause. Could you please send me the hubstaff.log file as well?</p>
+          
+          <h3>If this happens repeatedly</h3>
+          <p>If the user reports this happening multiple times:</p>
+          <ol>
+            <li>Check hubstaff.log for patterns around the error times</li>
+            <li>Look for memory warnings or disk space issues</li>
+            <li>Consider having the user reinstall Hubstaff</li>
+            <li>Escalate to engineering if the error persists</li>
+          </ol>
         `
       },
       
