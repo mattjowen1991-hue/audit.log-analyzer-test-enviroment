@@ -865,11 +865,13 @@ else msg = w.msg;
 
       let mainHTML = '';
       data.intervals.forEach((it, idx) => {
-        const left = pos(it.start), width = Math.max(pos(it.stop) - left, 0.3);
-        const next = data.intervals[idx + 1];
-        const touching = next && (next.start - it.stop) < 2000;
-        mainHTML += `<div class="t-block ${it.startReason}" data-idx="${idx}" data-touching="${touching}" style="left:${left}%;width:${width}%"></div>`;
-      });
+  const left = pos(it.start), width = Math.max(pos(it.stop) - left, 0.3);
+  const next = data.intervals[idx + 1];
+  const touching = next && (next.start - it.stop) < 2000;
+  const configStopped = ['CONFIGURATION', 'LIMIT', 'PROJECT_CONFIGURATION_URL', 'PROJECT_CONFIGURATION_LOCATION'].includes(it.stopReason);
+  const blockClass = configStopped ? 'CONFIG_STOPPED' : it.startReason;
+  mainHTML += `<div class="t-block ${blockClass}" data-idx="${idx}" data-touching="${touching}" style="left:${left}%;width:${width}%"></div>`;
+});
 
       data.discarded.forEach(d => {
         const left = pos(d.start), width = Math.max(pos(d.stop) - left, 0.3);
