@@ -913,16 +913,32 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
           // Highlight related event row (for crash warnings, unclosed starts, etc.)
           if (timeStr) {
             const targetTime = new Date(timeStr).getTime();
+            const warnType = li.dataset.widx !== undefined ? data.warns[parseInt(li.dataset.widx)]?.type : null;
             const eventRows = $('eventsBody').querySelectorAll('tr[data-event-time]');
+            let bestMatch = null;
+            
             for (const row of eventRows) {
               const rowTime = parseInt(row.dataset.eventTime);
+              const rowType = row.dataset.eventType;
+              
               // Match if within 2 seconds (to handle slight timestamp differences)
               if (Math.abs(rowTime - targetTime) < 2000) {
-                row.classList.add('event-highlight');
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                didSomething = true;
-                break;
+                // Prefer exact type match for crash warnings
+                if (warnType && rowType === warnType) {
+                  bestMatch = row;
+                  break; // Exact match found, stop looking
+                }
+                // Otherwise take the first time match as fallback
+                if (!bestMatch) {
+                  bestMatch = row;
+                }
               }
+            }
+            
+            if (bestMatch) {
+              bestMatch.classList.add('event-highlight');
+              bestMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              didSomething = true;
             }
           }
           
