@@ -663,8 +663,11 @@
           warns.push({ type: 'QUICK_STARTSTOP', msg: `Quick start/stop at ${fmtTimeWithTz(it.start)} (${Math.round(it.secs)}s) - likely accidental double-click`, time: it.start });
         }
         if (it.stopReason === 'CONFIGURATION') {
-          warns.push({ type: 'STOPPED_BY_CONFIG', msg: `Tracking stopped by configuration at ${fmtTimeWithTz(it.stop)}`, time: it.stop });
-        }
+  warns.push({ type: 'STOPPED_BY_CONFIG', msg: `Tracking stopped by configuration at ${fmtTimeWithTz(it.stop)}`, time: it.stop });
+}
+if (it.stopReason === 'PROJECT_CONFIGURATION_URL') {
+  warns.push({ type: 'STOPPED_BY_URL_PERMISSION', msg: `Tracking stopped - URL permission not granted at ${fmtTimeWithTz(it.stop)}`, time: it.stop });
+}
       }
 
       const crashes = events.filter(e => e.type === 'STARTUP_UNCLEAN');
@@ -807,7 +810,7 @@
       if (data.warns.length) {
         $('warningsList').innerHTML = data.warns.map(w => {
           let msg, cls = '';
-          const hasLearnMore = ['QUICK_STARTSTOP', 'CRASH_RECOVERED', 'CRASH_TIME_LOST', 'CRASH_NO_TRACKING', 'UNCLOSED', 'UNMATCHED', 'STOPPED_BY_CONFIG'].includes(w.type);
+          const hasLearnMore = ['QUICK_STARTSTOP', 'CRASH_RECOVERED', 'CRASH_TIME_LOST', 'CRASH_NO_TRACKING', 'UNCLOSED', 'UNMATCHED', 'STOPPED_BY_CONFIG', 'STOPPED_BY_URL_PERMISSION'].includes(w.type);
           const learnMoreBtn = hasLearnMore ? `<button class="learn-more-btn" data-type="${w.type}">Learn more</button>` : '';
 
           if (plain) {
@@ -817,7 +820,8 @@
             else if (w.type === 'CRASH_RECOVERED') { msg = `✅ App crashed at ${fmtTimeWithTz(w.time)} but time was recovered successfully.`; cls = 'color:var(--accent)'; }
             else if (w.type === 'CRASH_TIME_LOST') { msg = `⚠️ App crashed at ${fmtTimeWithTz(w.time)} - some time may have been lost. Check the dashboard to confirm.`; cls = 'color:var(--warn)'; }
             else if (w.type === 'CRASH_NO_TRACKING') msg = `ℹ️ App crashed at ${fmtTimeWithTz(w.time)} but user wasn't tracking, so no time was lost.`;
-            else msg = w.msg;
+else if (w.type === 'STOPPED_BY_URL_PERMISSION') msg = `🔗 Tracking stopped at ${fmtTimeWithTz(w.time)} because URL permission wasn't granted. The project requires URL tracking.`;
+else msg = w.msg;
           } else { msg = w.msg; }
           return `<li style="${cls}"><span>${msg}</span>${learnMoreBtn}</li>`;
         }).join('');
@@ -1239,6 +1243,57 @@ $('analyzeBtn').onclick = () => {
           </ul>
         `
       },
+
+      'STOPPED_BY_URL_PERMISSION': {
+        title: '🔗 Tracking Stopped - URL Permission Required',
+        content: `
+          <h3>What happened?</h3>
+          <p>Tracking was automatically stopped because the user didn't grant permission for Hubstaff to read browser URLs, and the project requires URL tracking.</p>
+          
+          <h3>Why URL permission is needed</h3>
+          <ul>
+            <li>Some organizations require URL tracking to monitor which websites employees visit during work</li>
+            <li>This is configured at the project or organization level by an admin</li>
+            <li>If URL tracking is required but permission isn't granted, the app cannot track time</li>
+          </ul>
+          
+          <h3>What the logs show</h3>
+          <p>You'll typically see this sequence:</p>
+          <ol>
+            <li><code>URLS_PERMISSION</code> - App requested permission to read URLs</li>
+            <li><code>URLS_PERMISSION_ABORT</code> - User declined or dismissed the prompt</li>
+            <li><code>TRACKING_STOPPED</code> - Tracking stopped due to URLs data consent/permission</li>
+            <li><code>STOP_TRACKING by [PROJECT_CONFIGURATION_URL]</code> - The actual stop event</li>
+          </ol>
+          
+          <h3>Common scenarios</h3>
+          <ul>
+            <li><strong>User clicked "Don't Allow"</strong> - When the macOS permission prompt appeared</li>
+            <li><strong>Permission was revoked</strong> - User went to System Settings and removed the permission</li>
+            <li><strong>Timeout</strong> - User didn't respond to the permission prompt in time</li>
+            <li><strong>Browser not supported</strong> - Some browsers may not support URL tracking</li>
+          </ul>
+          
+          <h3>How to fix it</h3>
+          <p><strong>On macOS:</strong></p>
+          <ol>
+            <li>Open <strong>System Settings</strong> → <strong>Privacy & Security</strong> → <strong>Automation</strong></li>
+            <li>Find <strong>Hubstaff</strong> in the list</li>
+            <li>Enable the checkbox for the browser (e.g., Google Chrome, Safari)</li>
+            <li>Restart Hubstaff and try tracking again</li>
+          </ol>
+          
+          <h3>What to tell the customer</h3>
+          <p>The logs show tracking stopped because URL permission wasn't granted. Your organization requires URL tracking for this project. To fix this:</p>
+          <ol>
+            <li>Go to System Settings → Privacy & Security → Automation</li>
+            <li>Find Hubstaff and enable access to your browser</li>
+            <li>Restart Hubstaff and try again</li>
+          </ol>
+          <p>If you don't want to grant URL permission, you'll need to ask your admin if there's a project that doesn't require URL tracking.</p>
+        `
+      },
+      
       'LEFT_JOBSITE': {
         title: '📍 Left Required Job Site',
         content: `
