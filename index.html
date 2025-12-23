@@ -620,7 +620,7 @@
 if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
   const rm = line.match(/by \[([^\]]+)\]/);
   reason = rm ? rm[1] : 'USER';
-  const pm = line.match(/\[Project:(\d+)\]/);
+  const pm = line.match(/(?:Started|Stopped): \[([^\]]+)\]/);
   if (pm) projectId = pm[1];
 }
 
