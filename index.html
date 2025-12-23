@@ -535,15 +535,21 @@
       }
     }
 
-    function fmtTimeWithTz(date) {
-      if (!date) return '';
-      if (!$('userTzMode').checked || userTzOffsetMs === null) {
-        return date.toLocaleTimeString();
-      }
-      const utcMs = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
-      const userDate = new Date(utcMs + userTzOffsetMs);
-      return userDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' ★';
+    function fmtTimeWithTz(date, includeDate = false) {
+  if (!date) return '';
+  if (!$('userTzMode').checked || userTzOffsetMs === null) {
+    if (includeDate) {
+      return date.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString();
     }
+    return date.toLocaleTimeString();
+  }
+  const utcMs = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
+  const userDate = new Date(utcMs + userTzOffsetMs);
+  if (includeDate) {
+    return userDate.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + userDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' ★';
+  }
+  return userDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' ★';
+}
 
     function parseTs(line) {
       const m = line.match(/(\d{4}-\d{2}-\d{2})[\sT](\d{2}:\d{2}:\d{2})(?:\.(\d+))?([+-]\d{2}:?\d{2}|Z|\s[+-]\d{4})/);
@@ -765,7 +771,7 @@ if (it.stopReason === 'PROJECT_CONFIGURATION_URL') {
         const isRecovered = it.startReason === 'RESUMED';
         const rowStyle = isRecovered ? 'background: rgba(129,140,248,0.1);' : '';
         const recoveredBadge = isRecovered ? ' <span class="tag resume">RECOVERED</span>' : '';
-        return `<tr id="row-${i}" style="${rowStyle}"><td>${i+1}${recoveredBadge}</td><td><span class="time-link" data-ts="${it.start.toISOString()}">${fmtTimeWithTz(it.start)}</span></td><td><span class="time-link" data-ts="${it.stop.toISOString()}">${fmtTimeWithTz(it.stop)}</span></td><td><span class="tag ok">${fmtTime(it.secs)}</span></td><td><span class="tag ${stopCls}">${it.stopReason}</span></td></tr>`;
+        return `<tr id="row-${i}" style="${rowStyle}"><td>${i+1}${recoveredBadge}</td><td><span class="time-link" data-ts="${it.start.toISOString()}">${fmtTimeWithTz(it.start, true)}</span></td><td><span class="time-link" data-ts="${it.stop.toISOString()}">${fmtTimeWithTz(it.stop, true)}</span></td><td><span class="tag ok">${fmtTime(it.secs)}</span></td><td><span class="tag ${stopCls}">${it.stopReason}</span></td></tr>`;
       }).join('');
 
       $('intervalsBody').querySelectorAll('.time-link').forEach(el => {
@@ -804,7 +810,7 @@ if (it.stopReason === 'PROJECT_CONFIGURATION_URL') {
         else if (e.type === 'RESUME_IGNORED') { cls += ' warn'; rowStyle = 'background: rgba(245,158,11,0.1);'; if (plain) detail = '⚠️ Previous session too old - time could not be recovered'; }
         else if (e.type.includes('CLEAN') || e.type === 'SHUTDOWN') cls += ' ok';
 
-        return `<tr style="${rowStyle}"><td>${fmtTimeWithTz(e.ts)}</td><td><span class="${cls}">${e.type}</span></td><td style="color:var(--muted);font-size:11px;">${detail}</td></tr>`;
+        return `<tr style="${rowStyle}"><td>${fmtTimeWithTz(e.ts, true)}</td><td><span class="${cls}">${e.type}</span></td><td style="color:var(--muted);font-size:11px;">${detail}</td></tr>`;
       }).join('');
 
       if (data.warns.length) {
@@ -893,8 +899,8 @@ else msg = w.msg;
             const row = $('row-' + idx);
             if (row) row.classList.add('highlight');
 
-            let content = `<p><span class="label">Start:</span> ${fmtTimeWithTz(it.start)}</p>`;
-            content += `<p><span class="label">Stop:</span> ${fmtTimeWithTz(it.stop)}</p>`;
+            let content = `<p><span class="label">Start:</span> ${fmtTimeWithTz(it.start, true)}</p>`;
+content += `<p><span class="label">Stop:</span> ${fmtTimeWithTz(it.stop, true)}</p>`;
             content += `<p><span class="label">Duration:</span> ${fmtTime(it.secs)}</p>`;
             content += `<p><span class="label">Started by:</span> ${it.startReason}</p>`;
             content += `<p><span class="label">Stopped by:</span> ${it.stopReason}</p>`;
