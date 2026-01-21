@@ -1,8 +1,8 @@
-# Hubstaff Audit Log Analyzer v34
+# Hubstaff Audit Log Analyzer v35
 
 A browser-based tool for analyzing Hubstaff `audit.log` files to understand tracking sessions, crashes, idle time, and more.
 
-![Version](https://img.shields.io/badge/version-v34-green)
+![Version](https://img.shields.io/badge/version-v35-green)
 ![Privacy](https://img.shields.io/badge/privacy-100%25%20local-blue)
 
 ---
@@ -62,6 +62,11 @@ Two sample buttons are provided for testing:
 - **Crash recovery status** — Whether time was saved or lost
 - **Configuration stops** — When tracking was stopped by system settings
 - **Clickable warnings** — Jump directly to the relevant interval or event
+
+### Built-in Help Guide
+- **Tabbed help modal** accessible from footer with comprehensive documentation
+- **Common scenarios** for support staff (missing time, idle disputes, unexpected stops)
+- **Quick reference** for KPIs, timeline colors, warning types, and idle decisions
 
 ### User Timezone Support
 - Convert all displayed times to the customer's timezone
@@ -332,7 +337,8 @@ Enter the offset in one of these formats:
 
 ## Version History
 
-- **v34** — Current version with full crash recovery analysis, clickable warnings, date filtering, user timezone support, and idle time decisions table
+- **v35** — Added comprehensive in-app Help Guide for support staff, fixed date filtering bug for Idle Time Decisions table
+- **v34** — Full crash recovery analysis, clickable warnings, date filtering, user timezone support, and idle time decisions table
 
 ---
 
