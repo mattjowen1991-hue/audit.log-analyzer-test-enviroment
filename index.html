@@ -249,6 +249,16 @@
       </div>
 
       <div class="card">
+        <div class="section-title">💤 Idle Time Decisions</div>
+        <div class="table-wrap" style="max-height:300px;">
+          <table>
+            <thead><tr><th>Time</th><th>Idle Duration</th><th>Response Time</th><th>User Action</th><th>Raw Values</th></tr></thead>
+            <tbody id="idleDecisionsBody"><tr><td colspan="5" style="color:var(--muted)">No idle decisions recorded</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="section-title">Events & Warnings</div>
         <div class="table-wrap">
           <table>
@@ -725,21 +735,52 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
       }
 
       let idleKept = 0, idleDisc = 0;
+      const idleDecisions = [];
       const answers = events.filter(e => e.type === 'IDLE_ANSWER');
       for (const a of answers) {
         const wake = events.filter(e => e.type === 'IDLE_WAKE' && e.ts < a.ts).pop();
-        if (wake?.secs) {
-          if (a.keepIdle === 1) idleKept += wake.secs;
-          else if (a.stopTrack === 1) {
-            idleDisc += wake.secs;
-            discarded.push({ start: new Date(wake.ts - wake.secs*1000), stop: wake.ts, secs: wake.secs });
+        const idleSecs = wake?.secs || 0;
+        const exceeds1Hour = idleSecs > 3600;
+        
+        // Extract response time from IDLE_ANSWER line (e.g., "after 7 seconds with")
+        const responseTimeMatch = a.raw?.match(/after\s+(\d+)\s+seconds?\s+with/i);
+        const responseTimeSecs = responseTimeMatch ? parseInt(responseTimeMatch[1]) : null;
+        
+        // Determine decision type
+        let decision, decisionDetail;
+        if (a.keepIdle === 1) {
+          decision = 'KEPT';
+          decisionDetail = 'User clicked YES to keep idle time';
+          if (idleSecs) idleKept += idleSecs;
+        } else if (a.stopTrack === 1) {
+          decision = 'DISCARDED_STOPPED';
+          decisionDetail = 'User clicked NO and stopped tracking';
+          if (idleSecs) {
+            idleDisc += idleSecs;
+            discarded.push({ start: new Date(wake.ts - idleSecs*1000), stop: wake.ts, secs: idleSecs });
           }
+        } else {
+          decision = 'DISCARDED_CONTINUED';
+          decisionDetail = 'User clicked NO but continued tracking';
+          if (idleSecs) idleDisc += idleSecs;
         }
+        
+        idleDecisions.push({
+          ts: a.ts,
+          seconds: idleSecs,
+          decision: decision,
+          decisionDetail: decisionDetail,
+          keepIdle: a.keepIdle === 1,
+          stopTracking: a.stopTrack === 1,
+          responseTimeSecs: responseTimeSecs,
+          exceeds1Hour: exceeds1Hour,
+          rawValues: `KeepIdle: ${a.keepIdle === 1 ? '1' : '0'} / StopTracking: ${a.stopTrack === 1 ? '1' : '0'}`
+        });
       }
 
       const others = events.filter(e => !['START_TRACKING','STOP_TRACKING'].includes(e.type));
 
-      return { intervals, discarded, warns, events: others, idleKept, idleDisc, allEvents: events };
+      return { intervals, discarded, warns, events: others, idleKept, idleDisc, allEvents: events, idleDecisions };
     }
 
     function hideInfoBox() {
@@ -838,6 +879,45 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
 
         return `<tr style="${rowStyle}" data-event-time="${e.ts.getTime()}" data-event-type="${e.type}"><td>${fmtTimeWithTz(e.ts, true)}</td><td><span class="${cls}">${e.type}</span></td><td style="color:var(--muted);font-size:11px;">${detail}</td></tr>`;
       }).join('');
+
+      // === RENDER IDLE DECISIONS TABLE ===
+      if (data.idleDecisions && data.idleDecisions.length > 0) {
+        $('idleDecisionsBody').innerHTML = data.idleDecisions.map(d => {
+          let decisionCls, actionIcon, actionText;
+          if (d.decision === 'KEPT') {
+            decisionCls = 'ok';
+            actionIcon = '✅';
+            actionText = 'KEPT - User clicked YES';
+          } else if (d.decision === 'DISCARDED_STOPPED') {
+            decisionCls = 'danger';
+            actionIcon = '🛑';
+            actionText = 'DISCARDED + STOPPED tracking';
+          } else {
+            decisionCls = 'warn';
+            actionIcon = '❌';
+            actionText = 'DISCARDED - User clicked NO';
+          }
+          
+          // Add warning if exceeds 1 hour
+          let durationNote = '';
+          if (d.exceeds1Hour) {
+            durationNote = ' <span style="color:var(--danger);font-size:10px;" title="Idle time exceeding 1 hour cannot be kept">⚠️ >1hr</span>';
+          }
+          
+          const responseTime = d.responseTimeSecs ? `${d.responseTimeSecs}s` : '—';
+          const idleDuration = d.seconds ? fmtTime(d.seconds) : '—';
+          
+          return `<tr>
+            <td>${fmtTimeWithTz(d.ts, true)}</td>
+            <td>${idleDuration}${durationNote}</td>
+            <td style="color:var(--muted)">${responseTime}</td>
+            <td><span class="tag ${decisionCls}">${actionIcon} ${actionText}</span></td>
+            <td style="font-family:monospace;font-size:10px;color:var(--muted)">${d.rawValues}</td>
+          </tr>`;
+        }).join('');
+      } else {
+        $('idleDecisionsBody').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No idle decisions recorded</td></tr>';
+      }
 
       if (data.warns.length) {
         $('warningsList').innerHTML = data.warns.map((w, wIdx) => {
@@ -1702,6 +1782,7 @@ $('analyzeBtn').onclick = () => {
         if (result.warns) result.warns.length = 0;
         if (result.events) result.events.length = 0;
         if (result.allEvents) result.allEvents.length = 0;
+        if (result.idleDecisions) result.idleDecisions.length = 0;
       }
       result = null;
     });
