@@ -139,6 +139,31 @@
     .modal .tech-box { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.3); border-radius: 8px; padding: 16px; margin-top: 20px; }
     .modal .tech-box h4 { color: var(--resume); margin: 0 0 10px 0; font-size: 13px; }
     .close-btn { float: right; background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .close-btn:hover { border-color: var(--accent); }
+
+    /* Help Guide Styles */
+    .help-guide { max-width: 900px; max-height: 90vh; }
+    .help-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .help-nav-btn { background: var(--panel); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+    .help-nav-btn:hover { border-color: var(--accent); color: var(--text); }
+    .help-nav-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
+    .help-section { display: none; }
+    .help-section.active { display: block; }
+    .help-section h3 { color: var(--accent); margin: 20px 0 12px; font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .help-section h3:first-child { margin-top: 0; }
+    .help-section h4 { color: var(--link); margin: 16px 0 8px; font-size: 13px; }
+    .help-section p { margin: 8px 0; line-height: 1.6; }
+    .help-section ul, .help-section ol { margin: 8px 0 16px 20px; }
+    .help-section li { margin: 6px 0; line-height: 1.5; }
+    .help-section code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: var(--accent); }
+    .help-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+    .help-table th, .help-table td { padding: 10px 12px; text-align: left; border: 1px solid var(--border); }
+    .help-table th { background: var(--panel); color: var(--muted); font-weight: 600; }
+    .help-table tr:hover { background: rgba(34,197,94,0.05); }
+    .help-callout { background: rgba(34,197,94,0.1); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+    .help-callout.warning { background: rgba(245,158,11,0.1); border-left-color: var(--warn); }
+    .help-callout.danger { background: rgba(239,68,68,0.1); border-left-color: var(--danger); }
+    .help-callout.info { background: rgba(59,130,246,0.1); border-left-color: var(--link); }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
@@ -273,7 +298,9 @@
       </div>
     </div>
     <footer style="text-align:center; padding:20px; border-top:1px solid var(--border); margin-top:20px; font-size:12px; color:var(--muted);">
-      <span>Hubstaff Log Analyzer v34</span>
+      <span>Hubstaff Audit Log Analyzer v34</span>
+      <span style="margin:0 10px;">|</span>
+      <span class="help-link" id="helpGuideBtn">📖 Help Guide</span>
       <span style="margin:0 10px;">|</span>
       <span class="help-link" id="privacyBtn">🔒 Privacy Info</span>
     </footer>
@@ -323,114 +350,352 @@
   </div>
 
   <div class="modal-overlay" id="helpModal">
-    <div class="modal">
+    <div class="modal help-guide">
       <button class="close-btn" id="closeHelp">Close</button>
-      <h2>📊 Log Analyzer Help</h2>
+      <h2>📖 Hubstaff Audit Log Analyzer - Help Guide</h2>
       
-      <h3>1. About "Tracked Time (est.)"</h3>
-      <p>This time is calculated from when the user clicked <strong>Start</strong> and <strong>Stop</strong>.</p>
-      <div class="callout">
-        <strong>💡 Why might the dashboard show different time?</strong><br>
-        The dashboard may differ by 1-2 minutes. This is normal - it's how Hubstaff calculates time internally. Small differences are expected and nothing is wrong.
+      <nav class="help-nav">
+        <button class="help-nav-btn active" data-section="overview">Overview</button>
+        <button class="help-nav-btn" data-section="kpis">KPIs & Timeline</button>
+        <button class="help-nav-btn" data-section="idle">Idle Time</button>
+        <button class="help-nav-btn" data-section="crashes">Crashes</button>
+        <button class="help-nav-btn" data-section="warnings">Warnings</button>
+        <button class="help-nav-btn" data-section="scenarios">Common Scenarios</button>
+        <button class="help-nav-btn" data-section="technical">Technical Reference</button>
+      </nav>
+
+      <!-- OVERVIEW SECTION -->
+      <div class="help-section active" id="help-overview">
+        <h3>What This Tool Does</h3>
+        <p>The Audit Log Analyzer reads the <code>audit.log</code> file from a customer's Hubstaff app and shows you exactly what happened with their time tracking. It answers questions like:</p>
+        <ul>
+          <li>Did the customer actually start tracking?</li>
+          <li>Did the app crash? Was time recovered?</li>
+          <li>Did they discard idle time? What decision did they make?</li>
+          <li>Why did tracking stop unexpectedly?</li>
+          <li>Was there a configuration or permission issue?</li>
+        </ul>
+
+        <div class="help-callout">
+          <strong>🔒 Privacy Note</strong><br>
+          Everything happens in your browser. No data is ever sent to any server. When you close the tab or click "Clear," all data is removed from memory. It's completely safe to use with customer logs.
+        </div>
+
+        <h3>How to Use It</h3>
+        <ol>
+          <li>Open the analyzer in your web browser</li>
+          <li>Copy the contents of the customer's audit.log file</li>
+          <li>Paste it into the text box</li>
+          <li>Click "Analyze" (or press <code>Ctrl+Enter</code> / <code>Cmd+Enter</code>)</li>
+          <li>Review the results and share findings with the customer</li>
+        </ol>
+
+        <h3>When to Use hubstaff.log Instead</h3>
+        <p>The audit.log is great for understanding START/STOP events and crashes. But for some issues, you'll need the more detailed hubstaff.log:</p>
+        <ul>
+          <li>Screenshot or activity percentage questions</li>
+          <li>Location/GPS tracking issues</li>
+          <li>Specific error messages</li>
+          <li>Network/sync problems</li>
+        </ul>
       </div>
-      
-      <h3>2. Common Events Explained</h3>
-      <div class="event-grid">
-        <div class="event-card"><h5>START_TRACKING by [USER]</h5><p>User clicked Start button.</p></div>
-        <div class="event-card"><h5>STOP_TRACKING by [USER]</h5><p>User clicked Stop button.</p></div>
-        <div class="event-card"><h5>by [RESUMED]</h5><p>Time recovered after crash.</p></div>
-        <div class="event-card"><h5>by [IDLE]</h5><p>Stopped due to idle timeout.</p></div>
-        <div class="event-card"><h5>STARTUP_CLEAN</h5><p>App opened normally.</p></div>
-        <div class="event-card"><h5>STARTUP_UNCLEAN</h5><p>App opened after crash/force quit.</p></div>
-        <div class="event-card"><h5>KeepIdle: 1</h5><p>User kept idle time.</p></div>
-        <div class="event-card"><h5>StopTracking: 1</h5><p>User discarded idle time.</p></div>
+
+      <!-- KPIs & TIMELINE SECTION -->
+      <div class="help-section" id="help-kpis">
+        <h3>The Numbers at the Top (KPIs)</h3>
+        <p>When you analyze a log, you'll see five boxes at the top:</p>
+        <table class="help-table">
+          <tr><th>KPI</th><th>Description</th></tr>
+          <tr><td><strong>Tracked Time</strong></td><td>The total time between all START and STOP events. This may differ from the dashboard by 1-2 minutes, which is normal.</td></tr>
+          <tr><td><strong>Intervals</strong></td><td>How many separate tracking sessions were found. Each time the customer starts and stops is one interval.</td></tr>
+          <tr><td><strong>Idle Kept</strong></td><td>When the idle prompt appeared and the customer chose to keep the idle time.</td></tr>
+          <tr><td><strong>Idle Discarded</strong></td><td>When the idle prompt appeared and the customer chose to throw away the idle time.</td></tr>
+          <tr><td><strong>Warnings</strong></td><td>Problems or unusual things the analyzer found. Always check these!</td></tr>
+        </table>
+
+        <div class="help-callout warning">
+          <strong>💡 Why might the dashboard show different time?</strong><br>
+          The dashboard may differ by 1-2 minutes. This is normal - it's how Hubstaff calculates time internally using 10-minute slots. Small differences are expected and nothing is wrong.
+        </div>
+
+        <h3>The Visual Timeline</h3>
+        <p>The timeline shows tracking visually. Each colored bar represents time:</p>
+        <table class="help-table">
+          <tr><th>Bar Color</th><th>Meaning</th></tr>
+          <tr><td><span style="display:inline-block;width:16px;height:16px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-right:6px;"></span> Green bar</td><td>Normal tracking time (customer clicked Start)</td></tr>
+          <tr><td><span style="display:inline-block;width:16px;height:16px;background:var(--warn);border-radius:2px;vertical-align:middle;margin-right:6px;"></span> Orange bar</td><td>Idle time that was kept</td></tr>
+          <tr><td><span style="display:inline-block;width:16px;height:16px;background:var(--resume);border-radius:2px;vertical-align:middle;margin-right:6px;"></span> Purple bar</td><td>Time that was recovered after a crash</td></tr>
+          <tr><td><span style="display:inline-block;width:16px;height:16px;background:repeating-linear-gradient(45deg,#6b7280,#6b7280 4px,rgba(107,114,128,0.4) 4px,rgba(107,114,128,0.4) 8px);border-radius:2px;vertical-align:middle;margin-right:6px;"></span> Striped bar</td><td>Discarded time (customer threw it away)</td></tr>
+          <tr><td><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(90deg,var(--accent) 0%,var(--accent) 70%,var(--danger) 70%);border-radius:2px;vertical-align:middle;margin-right:6px;"></span> Green → Red</td><td>Tracking that was stopped by a system setting or limit</td></tr>
+        </table>
+
+        <h4>Timeline Tips</h4>
+        <ul>
+          <li><strong>Click any bar</strong> to see details about that tracking session</li>
+          <li><strong>Use the zoom slider</strong> to expand the timeline if it looks cramped</li>
+          <li><strong>Click empty space</strong> to place a red cursor line at any point in time</li>
+        </ul>
+
+        <h3>Showing the Customer's Timezone</h3>
+        <p>By default, all times are shown in YOUR timezone. To see times in the customer's timezone:</p>
+        <ol>
+          <li>Check the "Show user's timezone" box</li>
+          <li>Enter their UTC offset in the box</li>
+          <li>Times will now show with a ★ symbol to indicate they're in the customer's timezone</li>
+        </ol>
+        <table class="help-table">
+          <tr><th>Location</th><th>Enter this</th><th>Also works</th></tr>
+          <tr><td>New York (EST)</td><td><code>-05:00</code></td><td><code>-5</code></td></tr>
+          <tr><td>London (GMT)</td><td><code>+00:00</code></td><td><code>0</code></td></tr>
+          <tr><td>India (IST)</td><td><code>+05:30</code></td><td><code>5.5</code></td></tr>
+          <tr><td>Sydney (AEST)</td><td><code>+10:00</code></td><td><code>10</code></td></tr>
+        </table>
       </div>
-      
-      <h3>3. Understanding Crashes</h3>
-      <p>When you see <strong>STARTUP_UNCLEAN</strong>, it means the app restarted after a crash. Look for <strong>RESUME_DETECTED</strong> next - this means time was recovered.</p>
-      <p><strong>Note:</strong> Time won't auto-resume if more than 1 hour passed (8 hours on mobile).</p>
-      
-      <h3>4. Warning Signs</h3>
-      <p><strong>Unclosed START:</strong> Timer started but never stopped - usually means a crash.</p>
-      <p><strong>Two STARTs in a row:</strong> Tracking loop crashed while app was still running.</p>
-      
-      <h3>5. Using the Timeline</h3>
-      <p><strong>Click any bar</strong> to see details and highlight the matching row in the table.</p>
-      <p><strong>Use the zoom slider</strong> to expand the timeline for more detail.</p>
-      <p><strong>Click empty space</strong> to place a red cursor line.</p>
-      
-      <div class="tech-box">
-        <h4>🔧 Technical Details (for Tech Team)</h4>
+
+      <!-- IDLE TIME SECTION -->
+      <div class="help-section" id="help-idle">
+        <h3>Idle Time Decisions Table</h3>
+        <p>This table shows <strong>every single idle prompt response</strong> with full details. Use this when a customer claims they clicked "Yes" to keep idle time but it didn't save.</p>
+        
+        <table class="help-table">
+          <tr><th>Column</th><th>Description</th></tr>
+          <tr><td><strong>Time</strong></td><td>When the user responded to the idle prompt</td></tr>
+          <tr><td><strong>Idle Duration</strong></td><td>How long the user was idle before responding</td></tr>
+          <tr><td><strong>Response Time</strong></td><td>How many seconds the user took to answer the prompt</td></tr>
+          <tr><td><strong>User Action</strong></td><td>What the user chose (KEPT, DISCARDED, or DISCARDED + STOPPED)</td></tr>
+          <tr><td><strong>Raw Values</strong></td><td>The actual KeepIdle and StopTracking values from the log file</td></tr>
+        </table>
+
+        <h4>Understanding User Actions</h4>
+        <table class="help-table">
+          <tr><th>Display</th><th>Raw Values</th><th>What It Means</th></tr>
+          <tr><td>✅ KEPT - User clicked YES</td><td><code>KeepIdle: 1 / StopTracking: 0</code></td><td>User chose to keep the idle time</td></tr>
+          <tr><td>❌ DISCARDED - User clicked NO</td><td><code>KeepIdle: 0 / StopTracking: 0</code></td><td>User discarded idle time but continued tracking</td></tr>
+          <tr><td>🛑 DISCARDED + STOPPED</td><td><code>KeepIdle: 0 / StopTracking: 1</code></td><td>User discarded idle time and stopped tracking</td></tr>
+        </table>
+
+        <div class="help-callout warning">
+          <strong>⚠️ 1-Hour Limit</strong><br>
+          If idle duration exceeds 1 hour, a warning badge appears. Idle time over 1 hour <strong>cannot be kept</strong> regardless of user choice - this is a system limitation.
+        </div>
+
+        <h4>Investigating "I Clicked Yes But Time Wasn't Kept"</h4>
+        <ol>
+          <li>Go directly to the Idle Time Decisions table</li>
+          <li>Find the date/time in question</li>
+          <li>Check the "Raw Values" column - this shows exactly what the client recorded</li>
+          <li>Check if the idle duration exceeded 1 hour (⚠️ >1hr badge)</li>
+        </ol>
+
+        <h4>Interpreting the Results</h4>
+        <ul>
+          <li><strong>If KeepIdle: 1</strong> - The client DID record the user's YES click. If time is missing, it's a server-side issue.</li>
+          <li><strong>If KeepIdle: 0</strong> - The user clicked NO (or the prompt timed out). The client correctly recorded their choice.</li>
+          <li><strong>If >1hr badge shows</strong> - Even if they clicked YES, idle time over 1 hour cannot be kept. This is expected behavior.</li>
+        </ul>
+      </div>
+
+      <!-- CRASHES SECTION -->
+      <div class="help-section" id="help-crashes">
+        <h3>Understanding Crashes</h3>
+        <p>When Hubstaff crashes, the analyzer will tell you if time was recovered or lost:</p>
+        
+        <table class="help-table">
+          <tr><th>Warning</th><th>What It Means</th></tr>
+          <tr><td><span style="color:var(--accent);">✅ Crash Recovered</span></td><td>Good news! The app crashed but automatically recovered the tracking time. No action needed.</td></tr>
+          <tr><td><span style="color:var(--warn);">⚠️ Crash Time Lost</span></td><td>The app crashed and couldn't recover the time. This usually happens if more than 1 hour passed before restarting (8 hours on mobile).</td></tr>
+          <tr><td><span style="color:var(--muted);">ℹ️ Crash No Tracking</span></td><td>The app crashed, but the customer wasn't tracking at the time, so no time was lost.</td></tr>
+        </table>
+
+        <h4>How Crash Recovery Works</h4>
+        <ol>
+          <li>When you see <code>STARTUP_UNCLEAN</code>, it means the app restarted after a crash</li>
+          <li>Look for <code>RESUME_DETECTED</code> next - this means time was recovered</li>
+          <li>The analyzer corrects the timestamps automatically using the original start time</li>
+        </ol>
+
+        <div class="help-callout info">
+          <strong>Recovery Time Limits</strong><br>
+          Time won't auto-resume if more than <strong>1 hour</strong> passed (desktop) or <strong>8 hours</strong> (mobile). Look for <code>RESUME_IGNORED</code> in these cases.
+        </div>
+
+        <h4>Crash Warning Signs</h4>
+        <ul>
+          <li><strong>Unclosed START:</strong> Timer started but never stopped - usually means a crash</li>
+          <li><strong>Two STARTs in a row:</strong> Tracking loop crashed while app was still running</li>
+          <li><strong>STARTUP_UNCLEAN without RESUME:</strong> Crash occurred but no time was being tracked</li>
+        </ul>
+      </div>
+
+      <!-- WARNINGS SECTION -->
+      <div class="help-section" id="help-warnings">
+        <h3>Understanding Warnings</h3>
+        <p><strong>Warnings are clickable!</strong> Click one to jump to the related interval or event. Click "Learn more" for detailed explanations.</p>
+
+        <table class="help-table">
+          <tr><th>Warning</th><th>What It Means</th><th>Action</th></tr>
+          <tr>
+            <td><strong>⚡ Quick Start/Stop</strong></td>
+            <td>The timer was started and stopped within a few seconds</td>
+            <td>Usually an accidental double-click. No action needed.</td>
+          </tr>
+          <tr>
+            <td><strong>🔴 Unclosed START</strong></td>
+            <td>A START event was found but no matching STOP event</td>
+            <td>Check for STARTUP_UNCLEAN events that follow. Was time recovered?</td>
+          </tr>
+          <tr>
+            <td><strong>⚙️ Stopped by Configuration</strong></td>
+            <td>The system automatically stopped tracking</td>
+            <td>Check the customer's account settings and project membership.</td>
+          </tr>
+          <tr>
+            <td><strong>🔗 Stopped by URL Permission</strong></td>
+            <td>Project requires URL tracking but permission wasn't granted</td>
+            <td>On Mac: System Settings → Privacy & Security → Automation → Enable Hubstaff for browser</td>
+          </tr>
+          <tr>
+            <td><strong>📍 Stopped by Location</strong></td>
+            <td>Customer left a required Job Site</td>
+            <td>Verify job site settings and customer location at the time</td>
+          </tr>
+          <tr>
+            <td><strong>🚨 Stopped by Error</strong></td>
+            <td>Tracking stopped due to an internal error</td>
+            <td>Check the hubstaff.log file for detailed error messages</td>
+          </tr>
+        </table>
+
+        <h4>Common Causes of Configuration Stops</h4>
+        <ul>
+          <li>Weekly or daily time limit was reached</li>
+          <li>Project budget was exhausted</li>
+          <li>Customer was removed from the project</li>
+          <li>Organization settings changed mid-tracking</li>
+        </ul>
+      </div>
+
+      <!-- COMMON SCENARIOS SECTION -->
+      <div class="help-section" id="help-scenarios">
+        <h3>Scenario 1: Customer Says Time is Missing</h3>
+        <h4>What to look for:</h4>
+        <ol>
+          <li>Check the Tracked Time number - does it match what they expected?</li>
+          <li>Look at the Warnings section - any crashes or time lost?</li>
+          <li>Check Idle Discarded - did they accidentally throw away time?</li>
+          <li>Check the Idle Time Decisions table - see exactly what they clicked</li>
+          <li>Look at the interval table - did tracking actually start when they thought it did?</li>
+        </ol>
+        <h4>Common causes of "missing" time:</h4>
+        <ul>
+          <li>They forgot to click Start</li>
+          <li>They discarded idle time when the prompt appeared</li>
+          <li>The app crashed and time couldn't be recovered</li>
+          <li>Time was rejected by the server (locked timesheet, clock issues)</li>
+        </ul>
+
+        <h3>Scenario 2: Customer Says They Clicked YES to Keep Idle Time</h3>
+        <h4>What to look for:</h4>
+        <ol>
+          <li>Go directly to the Idle Time Decisions table</li>
+          <li>Find the date/time in question</li>
+          <li>Check the "Raw Values" column - this shows exactly what the client recorded</li>
+          <li>Check if the idle duration exceeded 1 hour (⚠️ >1hr badge)</li>
+        </ol>
+        <h4>Interpreting the results:</h4>
+        <ul>
+          <li><strong>If KeepIdle: 1</strong> - The client DID record the user's YES click. If time is missing, it's a server-side issue.</li>
+          <li><strong>If KeepIdle: 0</strong> - The user clicked NO (or the prompt timed out). The client correctly recorded their choice.</li>
+          <li><strong>If >1hr badge shows</strong> - Even if they clicked YES, idle time over 1 hour cannot be kept.</li>
+        </ul>
+
+        <h3>Scenario 3: Tracking Stopped Unexpectedly</h3>
+        <p>Look at the "Stop Reason" column in the interval table:</p>
+        <table class="help-table">
+          <tr><th>Stop Reason</th><th>What It Means</th></tr>
+          <tr><td><strong>USER</strong></td><td>Customer clicked Stop themselves - this is normal.</td></tr>
+          <tr><td><strong>IDLE</strong></td><td>Stopped because customer was idle too long and discarded the time.</td></tr>
+          <tr><td><strong>SHUTDOWN</strong></td><td>App was closed normally - this is fine.</td></tr>
+          <tr><td><strong>CONFIGURATION</strong></td><td>System stopped tracking - could be a time limit, budget limit, or removed from project.</td></tr>
+          <tr><td><strong>URL Permission</strong></td><td>Project requires URL tracking but customer didn't grant permission.</td></tr>
+          <tr><td><strong>LOCATION</strong></td><td>Customer left a required Job Site.</td></tr>
+          <tr><td><strong>ERROR</strong></td><td>Something went wrong - check hubstaff.log for details.</td></tr>
+        </table>
+      </div>
+
+      <!-- TECHNICAL REFERENCE SECTION -->
+      <div class="help-section" id="help-technical">
+        <h3>How The Analyzer Works (Technical Reference)</h3>
+        <p><em>This section documents the logic used to calculate all values. Useful for debugging if the analyzer shows unexpected results.</em></p>
+        
+        <h4>📊 Tracked Time (est.) - Interval Logic</h4>
+        <p>An <strong>interval</strong> is defined as a pair of one <code>(START_TRACKING)</code> event and the very next <code>(STOP_TRACKING)</code> or <code>(SHUTDOWN)</code> event.</p>
+        <ol>
+          <li>All log lines are parsed and sorted by timestamp</li>
+          <li>The analyzer loops through looking for <code>START_TRACKING</code> events</li>
+          <li>When found, it's held in memory as an "open start"</li>
+          <li>Continue until finding <code>STOP_TRACKING</code> or <code>SHUTDOWN</code></li>
+          <li>Calculate duration between start and stop timestamps</li>
+          <li>Save the completed interval, then look for the next start</li>
+        </ol>
+        <p><strong>"Tracked Time (est.)"</strong> is the sum of all interval durations.</p>
+        
+        <h4>🔄 Crash & Resume Logic</h4>
+        <p>This corrects inaccurate timestamps that occur after app crashes:</p>
+        <ol>
+          <li>When the parser finds a <code>(RESUME_DETECTED)</code> event, it extracts and stores the original <code>Start time:</code> from the log message</li>
+          <li>It then looks for the <code>(START_TRACKING) ... by [RESUMED]</code> event that immediately follows</li>
+          <li>The analyzer <strong>discards</strong> the timestamp from the <code>by [RESUMED]</code> line and <strong>substitutes</strong> the original start time from <code>RESUME_DETECTED</code></li>
+          <li>This corrected START event (with the earlier, accurate timestamp) is used to start the interval</li>
+        </ol>
+        
+        <h4>⏸️ Idle Time (Kept / Discarded)</h4>
+        <ol>
+          <li>The analyzer loops through all <code>(IDLE_ANSWER)</code> events</li>
+          <li>For each, it looks <em>backwards</em> to find the most recent <code>(IDLE_WAKE)</code> event that occurred <em>before</em> it</li>
+          <li>It extracts the <code>after X seconds</code> value from that <code>IDLE_WAKE</code> event</li>
+          <li>Based on the <code>IDLE_ANSWER</code> flags:
+            <ul>
+              <li><code>KeepIdle: 1</code> → seconds added to "Idle (Kept)" total</li>
+              <li><code>StopTracking: 1</code> → seconds added to "Idle (Discarded)" total</li>
+            </ul>
+          </li>
+        </ol>
+        
+        <h4>⚠️ Warning Detection</h4>
+        <p>The analyzer detects these patterns:</p>
+        <ul>
+          <li><strong>Unclosed START:</strong> A <code>START_TRACKING</code> with no matching <code>STOP_TRACKING</code> before the next START or end of log</li>
+          <li><strong>Unmatched STOP:</strong> A <code>STOP_TRACKING</code> found when there's no open START being tracked</li>
+          <li><strong>Quick Start/Stop:</strong> An interval where duration ≤ 5 seconds and both start and stop were <code>by [USER]</code></li>
+          <li><strong>Stopped by Config:</strong> Any interval where stop reason is <code>CONFIGURATION</code></li>
+          <li><strong>Crash Recovered:</strong> <code>STARTUP_UNCLEAN</code> followed by <code>RESUME_DETECTED</code> within 1 minute</li>
+          <li><strong>Crash Time Lost:</strong> <code>STARTUP_UNCLEAN</code> followed by <code>RESUME_IGNORED</code>, or crash while tracking with no resume</li>
+        </ul>
+        
+        <h4>📈 Timeline Visualization</h4>
+        <p>The timeline plots all intervals and events on a time scale:</p>
+        <ul>
+          <li><strong>Time range:</strong> 5 minutes before earliest event to 5 minutes after latest event</li>
+          <li><strong>Bar position:</strong> <code>((eventTime - minTime) / totalDuration) * 100%</code></li>
+          <li><strong>Bar color:</strong> Based on <code>startReason</code> (USER=green, IDLE=orange, RESUMED=purple) unless stopped by CONFIGURATION (green with red end)</li>
+          <li><strong>Markers:</strong> STARTUP_CLEAN (green dot), STARTUP_UNCLEAN (red X), SHUTDOWN (gray dot)</li>
+        </ul>
+        
+        <h4>🕐 Timestamp Parsing</h4>
+        <p>The analyzer handles these timestamp formats:</p>
+        <ul>
+          <li><code>2025-12-04 12:39:01.667205+1100</code> (timezone without colon)</li>
+          <li><code>2025-12-04 12:39:01.667205+11:00</code> (timezone with colon)</li>
+          <li><code>2025-12-04T12:39:01.667205Z</code> (UTC/Zulu time)</li>
+        </ul>
+        <p>All times displayed use the browser's local timezone for readability.</p>
+
+        <h4>🔧 For the Tech Team</h4>
         <p>The audit log records event timestamps. The dashboard uses slot-based calculations (10-minute slots). Expected variance: 0-120 seconds.</p>
         <p>For exact time, search <code>hubstaff.log</code> for: <code>Applied activity. Total:</code></p>
       </div>
-      
-      <h3>7. How The Analyzer Works (Technical Reference)</h3>
-      <p><em>This section documents the logic used to calculate all values. Useful for debugging if the analyzer shows unexpected results.</em></p>
-      
-      <h4>📊 Tracked Time (est.) - Interval Logic</h4>
-      <p>An <strong>interval</strong> is defined as a pair of one <code>(START_TRACKING)</code> event and the very next <code>(STOP_TRACKING)</code> or <code>(SHUTDOWN)</code> event.</p>
-      <ol>
-        <li>All log lines are parsed and sorted by timestamp</li>
-        <li>The analyzer loops through looking for <code>START_TRACKING</code> events</li>
-        <li>When found, it's held in memory as an "open start"</li>
-        <li>Continue until finding <code>STOP_TRACKING</code> or <code>SHUTDOWN</code></li>
-        <li>Calculate duration between start and stop timestamps</li>
-        <li>Save the completed interval, then look for the next start</li>
-      </ol>
-      <p><strong>"Tracked Time (est.)"</strong> is the sum of all interval durations.</p>
-      
-      <h4>🔄 Crash & Resume Logic</h4>
-      <p>This corrects inaccurate timestamps that occur after app crashes:</p>
-      <ol>
-        <li>When the parser finds a <code>(RESUME_DETECTED)</code> event, it extracts and stores the original <code>Start time:</code> from the log message</li>
-        <li>It then looks for the <code>(START_TRACKING) ... by [RESUMED]</code> event that immediately follows</li>
-        <li>The analyzer <strong>discards</strong> the timestamp from the <code>by [RESUMED]</code> line and <strong>substitutes</strong> the original start time from <code>RESUME_DETECTED</code></li>
-        <li>This corrected START event (with the earlier, accurate timestamp) is used to start the interval</li>
-      </ol>
-      <p><strong>Resume limits:</strong> Time won't auto-resume if more than 1 hour passed (desktop) or 8 hours (mobile). Look for <code>RESUME_IGNORED</code> in these cases.</p>
-      
-      <h4>⏸️ Idle Time (Kept / Discarded)</h4>
-      <ol>
-        <li>The analyzer loops through all <code>(IDLE_ANSWER)</code> events</li>
-        <li>For each, it looks <em>backwards</em> to find the most recent <code>(IDLE_WAKE)</code> event that occurred <em>before</em> it</li>
-        <li>It extracts the <code>after X seconds</code> value from that <code>IDLE_WAKE</code> event</li>
-        <li>Based on the <code>IDLE_ANSWER</code> flags:
-          <ul>
-            <li><code>KeepIdle: 1</code> → seconds added to "Idle (Kept)" total</li>
-            <li><code>StopTracking: 1</code> → seconds added to "Idle (Discarded)" total</li>
-          </ul>
-        </li>
-      </ol>
-      
-      <h4>⚠️ Warning Detection</h4>
-      <p>The analyzer detects these patterns:</p>
-      <ul>
-        <li><strong>Unclosed START:</strong> A <code>START_TRACKING</code> with no matching <code>STOP_TRACKING</code> before the next START or end of log</li>
-        <li><strong>Unmatched STOP:</strong> A <code>STOP_TRACKING</code> found when there's no open START being tracked</li>
-        <li><strong>Quick Start/Stop:</strong> An interval where duration ≤ 5 seconds and both start and stop were <code>by [USER]</code></li>
-        <li><strong>Stopped by Config:</strong> Any interval where stop reason is <code>CONFIGURATION</code></li>
-        <li><strong>Crash Recovered:</strong> <code>STARTUP_UNCLEAN</code> followed by <code>RESUME_DETECTED</code> within 1 minute</li>
-        <li><strong>Crash Time Lost:</strong> <code>STARTUP_UNCLEAN</code> followed by <code>RESUME_IGNORED</code>, or crash while tracking with no resume</li>
-      </ul>
-      
-      <h4>📈 Timeline Visualization</h4>
-      <p>The timeline plots all intervals and events on a time scale:</p>
-      <ul>
-        <li><strong>Time range:</strong> 5 minutes before earliest event to 5 minutes after latest event</li>
-        <li><strong>Bar position:</strong> <code>((eventTime - minTime) / totalDuration) * 100%</code></li>
-        <li><strong>Bar color:</strong> Based on <code>startReason</code> (USER=green, IDLE=orange, RESUMED=purple) unless stopped by CONFIGURATION (green with red end)</li>
-        <li><strong>Markers:</strong> STARTUP_CLEAN (green dot), STARTUP_UNCLEAN (red X), SHUTDOWN (gray dot)</li>
-      </ul>
-      
-      <h4>🕐 Timestamp Parsing</h4>
-      <p>The analyzer handles these timestamp formats:</p>
-      <ul>
-        <li><code>2025-12-04 12:39:01.667205+1100</code> (timezone without colon)</li>
-        <li><code>2025-12-04 12:39:01.667205+11:00</code> (timezone with colon)</li>
-        <li><code>2025-12-04T12:39:01.667205Z</code> (UTC/Zulu time)</li>
-      </ul>
-      <p>All times displayed use the browser's local timezone for readability.</p>
+
     </div>
   </div>
 
@@ -1264,8 +1529,20 @@ $('analyzeBtn').onclick = () => {
     });
 
     $('helpBtn').onclick = () => $('helpModal').classList.add('visible');
+    $('helpGuideBtn').onclick = () => $('helpModal').classList.add('visible');
     $('closeHelp').onclick = () => $('helpModal').classList.remove('visible');
     $('helpModal').onclick = e => { if (e.target === $('helpModal')) $('helpModal').classList.remove('visible'); };
+
+    // Help Guide navigation
+    document.querySelectorAll('.help-nav-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.help-nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        const section = document.getElementById('help-' + btn.dataset.section);
+        if (section) section.classList.add('active');
+      };
+    });
 
     $('closeLearnMore').onclick = () => $('learnMoreModal').classList.remove('visible');
     $('learnMoreModal').onclick = e => { if (e.target === $('learnMoreModal')) $('learnMoreModal').classList.remove('visible'); };
