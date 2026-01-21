@@ -750,6 +750,13 @@
   const filteredEvents = data.events.filter(filterEvent);
   const filteredAllEvents = data.allEvents.filter(filterEvent);
   
+  // Filter idle decisions by timestamp
+  const filteredIdleDecisions = data.idleDecisions ? data.idleDecisions.filter(d => {
+    if (fromDate && d.ts < fromDate) return false;
+    if (toDate && d.ts > toDate) return false;
+    return true;
+  }) : [];
+  
   // Recalculate idle from filtered events
   let idleKept = 0, idleDisc = 0;
   const answers = filteredAllEvents.filter(e => e.type === 'IDLE_ANSWER');
@@ -776,7 +783,8 @@
     events: filteredEvents,
     idleKept,
     idleDisc,
-    allEvents: filteredAllEvents
+    allEvents: filteredAllEvents,
+    idleDecisions: filteredIdleDecisions
   };
 }
     const fmtTime = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s/3600) + ':' + pad(Math.floor((s%3600)/60)) + ':' + pad(s%60); };
