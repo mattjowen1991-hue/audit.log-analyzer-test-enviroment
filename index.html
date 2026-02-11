@@ -725,13 +725,27 @@
   <script>
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, '0');
-    function filterByDate(data) {
+function filterByDate(data) {
   const fromVal = $('dateFrom').value;
   const toVal = $('dateTo').value;
   if (!fromVal && !toVal) return data;
   
-  const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : null;
-  const toDate = toVal ? new Date(toVal + 'T23:59:59') : null;
+  // Get the user-specified timezone offset (this should match the log's timezone)
+  const userTzOffset = parseTzOffset($('tzOffset').value);
+  
+  // Build timezone string for date parsing (e.g., "+08:00" or "+00:00")
+  let tzString = 'Z';
+  if (userTzOffset !== null) {
+    const totalMins = userTzOffset / 60000;
+    const sign = totalMins >= 0 ? '+' : '-';
+    const hrs = Math.floor(Math.abs(totalMins) / 60);
+    const mins = Math.abs(totalMins) % 60;
+    tzString = sign + String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0');
+  }
+  
+  // Create filter dates in the LOG's timezone so "Feb 10" means Feb 10 in the log
+  const fromDate = fromVal ? new Date(fromVal + 'T00:00:00' + tzString) : null;
+  const toDate = toVal ? new Date(toVal + 'T23:59:59.999' + tzString) : null;
   
   const filterInterval = (i) => {
     if (fromDate && i.start < fromDate) return false;
