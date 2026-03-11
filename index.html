@@ -909,11 +909,16 @@ function filterByDate(data) {
       else if (line.includes('(STARTUP_UNCLEAN)')) { type = 'STARTUP_UNCLEAN'; plain = 'App opened after crash/force quit.'; }
       else if (line.includes('(RESUME_DETECTED)')) {
         type = 'RESUME_DETECTED'; plain = 'Found previous session to recover.';
-        const sm = line.match(/Start time:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})/);
+        const sm = line.match(/Start time:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})(Z)?/);
         const tzm = line.match(/([+-]\d{2}:?\d{2})/);
-        if (sm && tzm) {
-          let tz = tzm[1]; if (!tz.includes(':')) tz = tz.slice(0,3)+':'+tz.slice(3);
-          resumeStart = new Date(sm[1].replace(' ','T') + '.000' + tz);
+        if (sm) {
+          if (sm[2] === 'Z') {
+            // Start time is already UTC — do not re-apply the line's offset
+            resumeStart = new Date(sm[1].replace(' ', 'T') + '.000Z');
+          } else if (tzm) {
+            let tz = tzm[1]; if (!tz.includes(':')) tz = tz.slice(0, 3) + ':' + tz.slice(3);
+            resumeStart = new Date(sm[1].replace(' ', 'T') + '.000' + tz);
+          }
         }
       }
       else if (line.includes('(RESUME_IGNORED)')) { type = 'RESUME_IGNORED'; plain = 'Previous session too old to recover.'; }
@@ -1067,7 +1072,24 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
 
       const others = events.filter(e => !['START_TRACKING','STOP_TRACKING'].includes(e.type));
 
-      return { intervals, discarded, warns, events: others, idleKept, idleDisc, allEvents: events, idleDecisions };
+      // Detect timezone offset from log timestamps
+      let detectedTz = null;
+      let detectedTzNegative = false;
+      if (events.length > 0) {
+        for (const e of events) {
+          const m = e.ts ? null : null; // ts is already a Date; re-parse from raw line not available here
+          break;
+        }
+        // Parse from raw text directly
+        const tzMatch = text.match(/[+-](\d{2}):?(\d{2})/);
+        const firstTzLine = text.match(/([+-]\d{2}:?\d{2})/);
+        if (firstTzLine) {
+          detectedTz = firstTzLine[1];
+          if (detectedTz.length === 5 && !detectedTz.includes(':')) detectedTz = detectedTz.slice(0,3) + ':' + detectedTz.slice(3);
+          detectedTzNegative = detectedTz.startsWith('-');
+        }
+      }
+      return { intervals, discarded, warns, events: others, idleKept, idleDisc, allEvents: events, idleDecisions, detectedTz, detectedTzNegative };
     }
 
     function hideInfoBox() {
@@ -1113,7 +1135,25 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
       $('kpiIntervals').textContent = data.intervals.length;
       $('kpiIdleKept').textContent = fmtTime(data.idleKept);
       $('kpiIdleDisc').textContent = fmtTime(data.idleDisc);
-      $('kpiWarnings').textContent = data.warns.length;
+      $('kpiWarnings').textContent = data.warns.length; // updated below after allWarns is built
+
+      // Timezone banner
+      const existingTzBanner = document.getElementById('tzWarningBanner');
+      if (existingTzBanner) existingTzBanner.remove();
+      const kpisEl = document.querySelector('.kpis');
+      if (data.detectedTzNegative) {
+        const banner = document.createElement('div');
+        banner.id = 'tzWarningBanner';
+        banner.style.cssText = 'background:rgba(239,68,68,0.12); border:1px solid #ef4444; border-radius:8px; padding:12px 16px; margin-bottom:12px; color:#fca5a5; font-size:13px;';
+        banner.innerHTML = '⚠️ <strong>Negative timezone offset detected (' + data.detectedTz + ')</strong> — This usually means the user has set their Hubstaff timezone to their employer\'s timezone instead of their own local timezone. Times in this log may be recorded incorrectly. Ask the user to update their timezone in <strong>Hubstaff Profile &gt; Edit account</strong> and sync their system clock to match their actual local timezone.';
+        kpisEl.insertAdjacentElement('afterend', banner);
+      } else if (!data.detectedTz) {
+        const banner = document.createElement('div');
+        banner.id = 'tzWarningBanner';
+        banner.style.cssText = 'background:rgba(245,158,11,0.12); border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:12px; color:#fcd34d; font-size:13px;';
+        banner.innerHTML = '⚠️ <strong>No timezone offset detected in these logs.</strong> Times are displayed as recorded, but if the user\'s system clock is misconfigured, tracked times may not reflect their actual local time. Check <code>helper_info.*</code> files for a <code>TZ Offset</code> line if available.';
+        kpisEl.insertAdjacentElement('afterend', banner);
+      }
 
       $('intervalsBody').innerHTML = data.intervals.map((it, i) => {
         const stopCls = it.stopReason === 'USER' ? 'ok' : it.stopReason === 'IDLE' ? 'warn' : it.stopReason === 'SHUTDOWN' ? 'ok' : it.stopReason === 'CONFIGURATION' ? 'danger' : it.stopReason === 'PROJECT_CONFIGURATION_LOCATION' ? 'danger' : 'danger';
@@ -1206,8 +1246,14 @@ if (type === 'START_TRACKING' || type === 'STOP_TRACKING') {
         $('idleDecisionsBody').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No idle decisions recorded</td></tr>';
       }
 
-      if (data.warns.length) {
-        $('warningsList').innerHTML = data.warns.map((w, wIdx) => {
+      const tzWarnEntry = data.detectedTzNegative
+        ? [{ type: 'TZ_NEGATIVE', msg: `⚠️ Negative timezone offset (${data.detectedTz}) — user's Hubstaff timezone is likely set to their employer's timezone, not their own. This causes incorrect time recording. Fix: Hubstaff Profile > Edit account > update timezone.` }]
+        : (!data.detectedTz ? [{ type: 'TZ_UNKNOWN', msg: '⚠️ No timezone offset found in logs — times are shown as recorded but may not reflect the user\'s actual local time.' }] : []);
+      const allWarns = [...tzWarnEntry, ...data.warns];
+      $('kpiWarnings').textContent = allWarns.length;
+
+      if (allWarns.length) {
+        $('warningsList').innerHTML = allWarns.map((w, wIdx) => {
           let msg, borderCls = '';
           const hasLearnMore = ['QUICK_STARTSTOP', 'CRASH_RECOVERED', 'CRASH_TIME_LOST', 'CRASH_NO_TRACKING', 'UNCLOSED', 'UNMATCHED', 'STOPPED_BY_CONFIG', 'STOPPED_BY_URL_PERMISSION', 'STOPPED_BY_ERROR'].includes(w.type);
           const learnMoreBtn = hasLearnMore ? `<button class="learn-more-btn" data-type="${w.type}">Learn more</button>` : '';
